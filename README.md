@@ -5,3 +5,5 @@ This was a quick hack, developed years ago for a single task.  It requires no pe
 
 Quick build instructions on the wiki - https://github.com/anomie-tech/qrdisplay/wiki
 
+Possible alternative (not yet vetted) for Browsers:
+https://github.com/rugk/offline-qr-code
