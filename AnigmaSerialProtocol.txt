@@ -1,0 +1,85 @@
+Anigma Serial Message Packet Protocol
+-------------------------------------
+This is a blocking, half-duplex data transfer protocol intended for use over a 
+USB Serial interface between a host and the Angima Keyboard.  It has a limited 
+command and status msg set used simply to coordinate data transfer.  Message 
+packets are encapsulated in rare-occurence byte sequences and limited in size. 
+Message packets are always base64 encoded, regardless of content type. 
+Consequently message packets never contain non-ASCII characters.
+
+
+Message Encapsulation:
+----------------------
+All messages start with a two char sequence of: #^
+All messages end with a two char sequence of: ^#
+
+
+Control Encapsulation:
+----------------------
+All commands/status messages start with a two char sequence of: #|
+All commands/status messages end with a two char sequence of: |#
+
+
+Future Message Headers(?):
+----------------------------
+message content size
+message content cksum
+message ID
+message group sequence number
+
+
+Command Messages:
+-----------------
+Status
+Sending
+
+
+Transmit Failures:
+------------------
+Invalid chars
+Size limit
+Dropped connection/Hung process/Time out
+Cksum invalid(?)
+missing sequence(?)
+
+
+Status Messages:
+----------------
+Idle
+Busy
+Offline
+Listening
+ErrorAbort
+ErrorReSend
+Abort
+RxValid
+
+
+Optimal Transaction Flow:
+-------------------------
+On detect serial connection, issue "Status" command.
+  Read response: "Idle" || "Busy" || "Offline"
+
+If "Busy", 30 times:  sleep(1), retry
+If "Offline" or "Busy".timeout, return Error to user.
+If "Idle", can send message.
+
+To send message, issue "Sending" command.
+  Read response:  "Listening" || "Busy" || "Offline"
+
+If "Listening":
+  for each byte in message, write char, read for response, if no error, next.
+    on response "ErrorAbort", clear TxErrors, clear buffer, return error to user
+    on response "ErrorReSend", sleep(1), TxErrors++, return to start loop.
+    on response "Abort", clear TxErrors, clear buffer, return error to user
+    on last write(last_char), read response for 30 seconds.
+      on response "RxValid", clear TxErrors, clear buffer, return OK to user
+      else clear TxErrors, clear buffer, return error to user
+
+
+Notes:
+-------
+https://rosettacode.org/wiki/CRC-32
+https://en.wikipedia.org/wiki/Base64
+
+
